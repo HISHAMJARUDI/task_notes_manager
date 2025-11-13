@@ -1,55 +1,73 @@
+
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  bool _isDarkMode = false;  // Default to light mode
+
+  @override
+  void initState() {
+    super.initState();
+    _loadThemePreference();
+  }
+
+  // Load theme preference from SharedPreferences
+  Future<void> _loadThemePreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isDarkMode = prefs.getBool('isDarkMode') ?? false;
+    });
+  }
+
+  // Toggle theme and save to SharedPreferences
+  Future<void> _toggleTheme(bool newValue) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isDarkMode', newValue);
+    setState(() {
+      _isDarkMode = newValue;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Task Notes Manager',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        primarySwatch: Colors.blue,
+      theme: ThemeData.light(),  // Light theme
+      darkTheme: ThemeData.dark(),  // Dark theme
+      themeMode: _isDarkMode ? ThemeMode.dark : ThemeMode.light,
+      home: HomeScreen(
+        isDarkMode: _isDarkMode,
+        onThemeToggle: _toggleTheme,
       ),
-      home: const HomeScreen(),
     );
   }
 }
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  final bool isDarkMode;
+  final Future<void> Function(bool) onThemeToggle;
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
+  const HomeScreen({
+    super.key,
+    required this.isDarkMode,
+    required this.onThemeToggle,
+  });
 
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
+  // Hardcoded sample items (with const for the const constructor)
   final List<String> _sampleItems = const [
-    'Task 1: BUY FOOD',
-    'Note 1: SOCCER AT 4 PM ',
+    'Task 1: Buy groceries',
+    'Note 1: SOCCER AT 4 PM',
     'Task 2: FINISH REPORT',
   ];
 
@@ -57,53 +75,60 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Tasks & Notes '),
+        title: const Text('My Tasks & Notes'),
       ),
-      body: Column(crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Padding(padding: EdgeInsets.all(16.0),
-      child: Text(
-      'My Tasks & Notes',
-      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-    ),
-    ),
-    Expanded(child: ListView.builder(
-    itemCount: _sampleItems.length,
-    itemBuilder: (context, index){
-    return ListTile(
-    title: Text(_sampleItems[index]),
-    );
-    },
-    ),
-    ),
-    ],
-    ),
-    floatingActionButton: FloatingActionButton(onPressed:(){
-    Navigator.push(
-    context,
-    MaterialPageRoute(builder: (context) => const Screen2()),
-    );
-    },
-    child: const Icon(Icons.add),
-    )
-    ,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Text(
+              'My Tasks & Notes',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+          ),
+          SwitchListTile(
+            title: const Text('Dark Mode'),
+            value: isDarkMode,
+            onChanged: onThemeToggle,
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: _sampleItems.length,
+              itemBuilder: (context, index) {
+                return ListTile(
+                  title: Text(_sampleItems[index]),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const Screen2()),
+          );
+        },
+        child: const Icon(Icons.add),
+      ),
     );
   }
 }
-class Screen2 extends StatelessWidget{
+
+class Screen2 extends StatelessWidget {
   const Screen2({super.key});
 
   @override
-  Widget build(BuildContext context){
+  Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Add Task/Note'),
-
-      ),
-      body: const Center(
-        child: Text('This is screen 2 - Add your form here later. '),
-
-      ),
-    );
+        appBar: AppBar(
+          title: const Text('Add Task/Note'),
+        ),
+        body: const Center(
+            child: Text('This is Screen 2 - Add your form here later.'),
+            ),
+        );
   }
-  }
+}
